@@ -1,3 +1,6 @@
+# Gene-culture coevolution
+> [webpage](https://zoometh.github.io/aDNA/)
+
 It is quite clear how our present is shaped by the recent Prehistory.
 Today, most of our present socio-economic politics are grounded on a
 Neolithic way of living (demography, production, ownership, residential
@@ -25,7 +28,7 @@ To describe gene-culture coevolution, two
 global dimensions of social groups can be distinguished: its genetic
 identity and its cultural identity
 
-# Theory
+## Theory
 
 The identity of a social group is the conjunction of its cultural and
 genetic identities. In traditional societies, the language barrier and
@@ -56,7 +59,7 @@ diffusion and trait-adoptions became increasingly significant, leading
 to Bronze Age highly hierarchised societies and globalized economy
 [@Kristiansen2014].
 
-# Case studie: a colonisation
+## Case studie: a colonisation
 
 A current model for these diffusion/differentiation processes follows
 these three phases:
@@ -74,8 +77,3 @@ these three phases:
 3.  development and identity affirmation: a new social group appears;
     styles autonomy; the potential of the new territory is really
     exploited; long-distance exchanges restart;
-
-
-# mtDNA, cultures and radiocarbon dates
-
-R + Leaflet integration of ancient DNA (aDNA) data

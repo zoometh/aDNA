@@ -1,0 +1,324 @@
+---
+title: "**Gene-culture** coevolution (GC-coev)"
+author: "Thomas Huet"
+bibliography:
+- 'refs.bib'
+output: 
+  bookdown::html_document2:
+    number_sections: false
+    keep_md: true
+  # html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(leaflet)
+library(shiny)
+library(kableExtra)
+library(dplyr)
+library(knitr)
+library(tidyverse)
+library(phylotools)
+library(igraph)
+library(RColorBrewer)
+
+metadata <- "mtdb_metadata.csv"
+
+blank_theme <- theme_minimal()+
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank(),
+    panel.border = element_blank(),
+    panel.grid=element_blank(),
+    axis.ticks = element_blank(),
+    plot.title=element_text(size=14, face="bold")
+  )
+```
+
+Gene-culture coevolution (GC-coev) is one of the main challenge of evolutionnary archaeology. Study of aDNA will permit to respond to the question: ['***Who ?***'](https://github.com/zoometh/thomashuet/blob/main/README.md#statements). It will permit to define the genetic identity of the social groups.This doc is a HTML presentation host on [GitHub](https://github.com/zoometh/aDNA), which brings together R + Leaflet coding showing how to download data from the Ancient mtDNA database (AmtDB) and we conduct and overview of GC-coev issues concerning the transition between hunter-gatherers (HG) and early farmers (EF) in the Central and West Mediterranean.
+
+# aDNA analysis
+
+Genetic analysis permit to evaluate populations (dis)similarities. The neutral hypothesis (H~0~) is that there is a
+population continuity with few random genetic drifts. Single-nucleotide polymorphisms (SNPs) are stable and good proxys to evaluate the (dis)similarities between populations. On the base of their study, H~0~ can be rejected (H~1~ accepted) and factors like mutation, selection and migration can be supposed. At the time scale we investigate (Recent Prehistory), only the migration factor could explain observed changes in the genetic of Europeans. There exist various methods to measure differences between populations and to distinguish groups of populations. Proximities among
+pairwise groups can be evaluated by the comparison of their genetic distance (F~ST~ matrix) [@Hervella]. The determination of groups (e.g. indigenous, immigrants) is mostly based on the study of the SNPs or
+discrete hg frequencies [@Bramanti09]. Similarities will be computed with Analysis of Molecular Variance (AMOVA), genetic mapping (e.g. phylogenetic trees, haplotype network, median-joining network) and cluster analysis (multidimensional scaling, dendrogram, etc.). All the data will be proceed with [ape](https://cran.r-project.org/web/packages/ape/index.html), [pegas](https://cran.r-project.org/web/packages/pegas/index.html), or any appropriate R
+packages.
+
+# Example of application
+
+To illustrate the use of R and polythetic analysis GC-coev analysis, mitochondrial DNA (mtDNA) can be download from the [Ancient mtDNA database (AmtDB)](https://amtdb.org/records/). This database gathers published mitochondrial sequences coming from the ancient DNA samples (aDNA). There is mtDNA datasets:  [data](#mt.data) and [metadata](#mt.meta)
+
+## mtDNA data {#mt.data}
+
+FASTA format is a text-based format for representing either nucleotide sequences or peptide sequences, in which base pairs or amino acids are represented using single-letter codes. A sequence in FASTA format begins with a single-line description, followed by lines of sequence data. FASTA formats can be read with the [phylotools](https://github.com/helixcn/phylotools) package. First identifiers are:
+
+```{r data1, echo=T}
+fasta.names <- phylotools::get.fasta.name("mtdb_1511.fasta")
+cat(head(fasta.names, 10), sep = "\n")
+```
+Each of these identifiers is a unique key for a sample. The data file counts <span style='color:grey'>`r length(fasta.names)`</span> different identifiers. These identifiers which allow to join the second dataset, [metadata](#mt.meta)
+
+## mtDNA metadata {#mt.meta}
+
+The mtDNA makes it possible to trace the maternal line. It passes from the mother to her children (of both sexes). The metadata file [`r metadata`](mtdb_metadata.csv) is downloaded from the AmtDB. The current metadata format from the AmtDB is .csv
+
+```{r meta1, echo=F, fig.align='center', fig.cap="Preview of the current [NeoNet dataset](#panel.data) (work in progress) using RShiny and Leaflet in R"}
+df <- read.csv(metadata, encoding = "UTF-8")
+kable(df[sample(nrow(df), 3), ],"html",
+      row.names = F,
+      caption = "aDNA metadata sample") %>%
+  kable_styling(full_width = FALSE, position = "center", font_size=11)
+```
+
+It counts <span style='color:grey'>`r nrow(df)`</span> samples and <span style='color:grey'>`r ncol(df)`</span> columns. 
+
+# Cross analysis
+
+A challenge is to cross analysis of mtDNA haplogroup (hg), cultures and radiocarbon dates to respond respectively to the questions ['Who', 'What', 'When'](https://github.com/zoometh/thomashuet/blob/main/README.md#statements)
+
+## mtDNA *and* culture {#cross.mt.DNA.culture}
+
+Within the AmtDB database, two (2) fields give direct insights on the cultural membership of the skeleton:
+
+1. 'culture' counts <span style='color:grey'>`r length(unique(df$culture))`</span> distinct cultures
+2. 'epoch' is more generic and counts <span style='color:grey'>`r length(unique(df$epoch))`</span> distinct epoch. 
+
+To illustrate GC-coev, we will focus on the Central and Western Mediterranean (ie, Italy to Spain) during the Mesolithic/Neolithic transition. We also avoid *unicum* in cultures(Freq > 2)
+
+```{r def, echo=T}
+df.MesoNeo <- df %>% 
+  filter(epoch == 'Mesolithic' | epoch == 'Neolithic') %>%
+  filter(latitude < 46 & latitude > 36) %>%
+  filter(longitude > -6 & longitude < 22.5)
+MNcultures <- as.data.frame(table(df.MesoNeo$culture),
+                            stringsAsFactors = F)
+# unicum
+MNcultures <- MNcultures %>% 
+  filter(Freq > 1)
+```
+
+After processing, the new dataset counts <span style='color:grey'>`r nrow(df.MesoNeo)`</span> samples and <span style='color:grey'>`r length(unique(df.MesoNeo$culture))`</span> distinct cultures:
+
+```{r pie_chart, echo=F}
+# Define the number of colors you want
+nb.cols <- nrow(MNcultures)
+mycolors <- colorRampPalette(brewer.pal(8, "Set1"))(nb.cols)
+df.colors <- data.frame(Var1=unique(MNcultures$Var1),
+                        color=mycolors)
+# Compute the position of labels
+data <- MNcultures %>% 
+  arrange(desc(Var1)) %>%
+  mutate(prop = Freq / sum(MNcultures$Freq) *100) %>%
+  mutate(ypos = cumsum(prop)- 0.5*prop )
+
+data <- merge(data, df.colors, by="Var1")
+
+ggplot(data, aes (x="", y = prop, fill = color)) + 
+  geom_bar(width = 1, stat = "identity", color="white") +
+  geom_text(aes(label = Freq),
+            position = position_stack(vjust = 0.5)) +
+  scale_fill_identity(guide = "legend", label = data$Var1, name = "cultures") +
+  coord_polar("y")+
+  blank_theme
+```
+  
+The selected sample of the dataset can be mapped. On their popup, the hg appears colored in <span style="color: red;">red</span> and the culture is colored in <span style='color:orange'>orange</span>  
+
+
+```{r cldd, echo=F, fig.align='center', fig.cap="Cleaned [Ancient mtDNA database](https://amtdb.org/records/) using RShiny and Leaflet in R"}
+df.MesoNeo.a <- df.MesoNeo
+df.MesoNeo.a <- merge(df.MesoNeo.a, df.colors, by.x="culture", by.y="Var1", all.x=T)
+# df.MesoNeo.a <- df.MesoNeo.a[!(df.MesoNeo.a$culture %in% unicums$Var1),]
+desc <- paste0("<b>", df.MesoNeo.a$site, 
+               "</b> <span style='color:red'>", df.MesoNeo.a$mt_hg, "</span> <br>",
+               "culture: <span style='color:",df.MesoNeo.a$color,";'>", df.MesoNeo.a$culture, "</span> <i>",
+               # "culture: <span style='color:orange'>", df.MesoNeo.a$culture, "</span> <i>",
+               df.MesoNeo.a$epoch, "</i><br>")
+df.MesoNeo.a$lbl <- paste0(desc, '<br> ref: <a href=',
+                         shQuote(paste0(df.MesoNeo.a[,'reference_links'])),
+                         "\ target=\"_blank\"",
+                 ">", df.MesoNeo.a[,'reference_names'], "</a>")
+leaflet(data = df.MesoNeo.a, width = "60%", height = "400px") %>%
+  # setView(lng = -111.846061, lat = 36.115847, zoom = 12) %>%
+  addTiles(group = 'OSM') %>%
+  addCircleMarkers(layerId = ~identifier, 
+                   lng = ~longitude,
+                   lat = ~latitude,
+                   weight = 1,
+                   radius = 3,
+                   popup = ~lbl,
+                   #fillColor = df_colors$color,
+                   color = ~color,
+                   opacity = 0.7,
+                   fillOpacity = 0.7)
+```
+
+A simple manner to model GC-coev is to create a co-occurences' graph of hg and cultures ('mt_hg' and 'culture' fields). The create graph will be a bipartite one (i.e, 2-mode graph, two class of vertices). It could be created with the  [igraph](https://cran.r-project.org/web/packages/igraph/index.html) package. Graph drawing is a well-known heuristic, the default layout is a force-directed algorithm (e.g. Fruchterman-Reingold layout) allowing to bring  closer or move away vertices depending on the edges they share. It allows to manipulate easily the graphs. Here, graph vertices are either cultures or hg. There is a link between a culture and a hg  when an entity of the culture refers to a hg. 
+
+```{r ddeodd, warning=F, echo=F, fig.width=10,fig.height=10}
+par(mar = c(0, 0, 0, 0))
+
+df.MesoNeo$culture <- toupper(df.MesoNeo$culture)
+edges <- df.MesoNeo[, c("culture", "mt_hg")]
+# grph <- graph_from_data_frame(edges, directed = TRUE, vertices = NULL)
+nds.culture <- unique(df.MesoNeo$culture)
+nds.culture.color <- rep("gold", length(nds.culture))
+nds.mt_hg<- unique(df.MesoNeo$mt_hg)
+nds.mt_hg.color <- rep("grey", length(nds.mt_hg))
+thm.ths.nds <- data.frame(name=c(nds.culture, nds.mt_hg),
+                          color=c(nds.culture.color, nds.mt_hg.color))
+g <- graph_from_data_frame(edges,
+                           directed=F,
+                           vertices= thm.ths.nds)
+plot(g, vertex.label.cex= 0.7,
+     vertex.frame.color=NA,
+     vertex.label.color = "black",
+     vertex.label.family="Helvetica",
+     vertex.size=9)
+```   
+
+A first reading of the graph shows that:
+
+1. U5 hg characterize the HG group [@Bramanti09]
+2. N1a hg characterize the EF group [@Brandt13]
+3. H hg characterize the Late Neolithic groups [@Brandt13]
+
+The dataset variability can be reduced with agglomeration techniques like the the [community detection algorithm](#com.det)
+
+### Community detection {#com.det}
+
+To to detect communities of each vertice, we employ the 'fast greedy' algorithm  ([fastgreedy.community](https://www.rdocumentation.org/packages/igraph/versions/0.4.1/topics/fastgreedy.community) from the igraph package. This algorithm is a hierarchical ranking algorithm where initially each vertex belongs to a distinct community, and the communities are merged iteratively, so that each merge is locally optimal. The algorithm stops when it is no longer possible to increase the modularity, it will be thus gives a grouping as well as a dendrogram. This algorithm is close to the agglomeration of Ward (CAH)
+
+```{r frr, warning=F, echo=F, fig.width=10 ,fig.height=10}
+g <- simplify(g)
+g_community <- fastgreedy.community(g)
+plot(g_community, 
+     g, vertex.label.cex= 0.7,
+     vertex.frame.color=NA,
+     vertex.label.color = "black",
+     vertex.label.family="Helvetica",
+     vertex.size=9)
+```
+
+A first reading of the clusters show a clear separation (i.e. edge distance) between NE Spain and France Middle/Late Neolithic (NE_IBERIA_MLN and FRANCE_MLN) with the earlier groups of HG (HUNTER-GATHERER and SE_IBERIA_MESO)
+
+### Resume
+
+GC-coev needs to be refined. Here, as stated, data come from two distinct periods: Mesolithic and Neolithic. To study each contemporaneous samples they can be subsetted and regroup when they share 95% of their radiocarbon probability densities. Maybe the cultural membership of mtDNA sample can be discussed upstream specifying the cultures they belong to, or downstream, choosing a different [community detection algorithm](#com.det), etc.
+
+## mtDNA *and* radiocarbon dates
+
+We will use the metadata .csv file [`r metadata`](mtdb_metadata.csv) to join the sample identifiers with the radiocarbon dates. These latter have a unique laboratory number [LabCode](https://zoometh.github.io/C14/neonet/#mf.labcode). This premit to associate the mtDNA sample with the radiocarbon date. To be easier to reuse for gene-date analysis, the dataset needs to be cleaned keeping interesting fields and removing samples with typo errors (like `df$longitude > 90`)
+
+```{r ddeo, echo=T, message=F}
+selected.fields <- c("identifier", "mt_hg", "site", "culture", "epoch", "bp", "c14_lab_code", "longitude", "latitude", "reference_names", "reference_links")
+n.samples <- nrow(df)
+df <- df %>% 
+  select(selected.fields) %>%
+  filter(longitude >= -90 & longitude <= 90) %>%
+  filter(latitude >= -90 & latitude <= 90)
+```
+
+The dataset has `r nrow(df)` samples (`r nrow(df)-n.samples` samples have coordinates errors). There's `r ncol(df)` columns. The dataset can be spacialized with Leaflet
+
+```{r notclean, echo=F, fig.align='center', fig.cap="Cleaned [Ancient mtDNA database](https://amtdb.org/records/) using RShiny and Leaflet in R"}
+desc <- paste0("<b>", df$site, "</b> <span style='color:red'>", df$mt_hg, "</span> <br>",
+               "culture: ", df$culture, " <i>", df$epoch, "</i><br>", 
+               "c14: ", df$bp, "[<span style='color:green'>", df$c14_lab_code, "</span>]")
+df$lbl <- paste0(desc, '<br> ref: <a href=',shQuote(paste0(df[,'reference_links'])),"\ target=\"_blank\"",
+                 ">", df[,'reference_names'], "</a>")
+leaflet(data = df, width = "60%", height = "400px") %>%
+  # setView(lng = -111.846061, lat = 36.115847, zoom = 12) %>%
+  addTiles(group = 'OSM') %>%
+  addCircleMarkers(layerId = ~identifier, 
+                   lng = ~longitude,
+                   lat = ~latitude,
+                   weight = 1,
+                   radius = 3,
+                   popup = ~lbl,
+                   #fillColor = df_colors$color,
+                   #color = "black",
+                   opacity = 0.7,
+                   fillOpacity = 0.7)
+```
+
+
+The selected samples are those associated to radiocarbon dates, so empty values are removed. The radicarbon field 'bp' is not strictly formatted, a text edition has to be done with regular expressions (*regex*). by splitting the BP and SD values currently in the 'bp' field (split on '±'). 
+
+
+```{r clean_c, echo=T}
+df <- df %>% 
+  filter(bp != "" & !is.na(bp))  %>%
+  filter(str_detect(bp, "±"))  %>%
+  filter(!str_detect(bp, "BP|and"))
+bps <- unlist(sapply(df$bp,
+                     function(x) strsplit(x, "±")),
+              use.names = FALSE)
+mat <- matrix(bps, ncol=2, byrow=TRUE)
+df$c14bp <- mat[, 1]
+df$c14sd<- mat[, 2]
+df$bp <- NULL
+```
+
+Now the new dataset has `r nrow(df)` samples and looks like:
+
+```{r step1, echo=F, fig.align='center', fig.cap="Preview of the current [NeoNet dataset](#panel.data) (work in progress) using RShiny and Leaflet in R"}
+selected.fields <- c("identifier", "mt_hg", "site", "culture", "epoch", "c14_lab_code", "c14bp", "c14sd", "longitude", "latitude", "reference_names", "reference_links")
+df <- df[, selected.fields]
+kable(df[sample(nrow(df), 6), ],"html",
+      row.names = F,
+      caption = "aDNA metadata sample") %>%
+  kable_styling(full_width = FALSE, position = "center", font_size=11)
+```
+
+The dataset can be spatialized. The mtDNA hg is colored in <span style="color: red;">red</span>. The LabCode is colored in <span style="color: green;">green</span>
+
+
+```{r map_ok, echo=F, fig.align='center', fig.cap="Cleaned [Ancient mtDNA database](https://amtdb.org/records/) using RShiny and Leaflet in R"}
+desc <- paste0("<b>", df$site, "</b> <span style='color:red'>", df$mt_hg, "</span> <br>",
+               "culture: ", df$culture, " <i>", df$epoch, "</i><br>", 
+               "c14: ", df$c14bp, " ± ", df$c14sd, " BP ", 
+               "[<span style='color:green'>", df$c14_lab_code, "</span>]")
+df$lbl <- paste0(desc, '<br> ref: <a href=',shQuote(paste0(df[,'reference_links'])),"\ target=\"_blank\"",
+                 ">", df[,'reference_names'], "</a>")
+leaflet(data = df, width = "60%", height = "400px") %>%
+  # setView(lng = -111.846061, lat = 36.115847, zoom = 12) %>%
+  addTiles(group = 'OSM') %>%
+  addCircleMarkers(layerId = ~identifier, 
+                   lng = ~longitude,
+                   lat = ~latitude,
+                   weight = 1,
+                   radius = 3,
+                   popup = ~lbl,
+                   #fillColor = df_colors$color,
+                   #color = "black",
+                   opacity = 0.7,
+                   fillOpacity = 0.7)
+```
+
+With their unique LabCode, the  dates can be easily [calibrated](https://neolithic.shinyapps.io/AbsoluteDating/#Applications) and connected to existing [databases](https://neolithic.shinyapps.io/AbsoluteDating/#Databases)
+
+# GC-coev concepts
+
+The classical issue on GC-coev topic -- to challenge
+the opposite 'demic diffusion' (i.e. immigration) and 'trait-adoption'
+(i.e. acculturation) models -- is purely theoretical: at the same time
+the population grew, both demic and cultural diffusions occurred. As said, horizontal transmission (exchanges between two or more societies) has taken a growing importance in course of the Neolithic.
+
+## Transmissions
+
+Transmissions can be represented with:
+
+* a tree-like structure when vertical (i.e diachronic, e.g. genetic transmission, phylogenetic tree)
+
+* a network when horizontal (i.e contemporary, e.g. trade network) 
+
+A phylogenetic history will be vertical, while a cultural tree will be more anastomosed (i.e. reticulated), showing more synchronous divergences [@Gray10]. To measure the coefficient of these horizontal interconnections one can employ the NeighborNet algorithm from the [phangorn](https://cran.r-project.org/web/packages/phangorn/index.html) package. This algorithm is based on the neighbor-joining method, it calculates the statistics of D-score and its derivative Q-residual (a Q-residual=0 is a tree, a Q-residual=1 is fully reticulated). Trees can be rooted (i.e. the ancestor will be identify) using appropriate algorithms depending on assumptions on evolution dynamics: weighted or unweighted
+pair-group arithmetic average (WPGMA or UPGMA) for example. The symbology of phylogenetic trees, networks, maps and other graphs can be managed with graphical grammar (e.g. [ggplot](https://cran.r-project.org/web/packages/ggplot2/index.html))
+
+# References

@@ -1,0 +1,115 @@
+---
+title: "Gene-culture coevolution"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(leaflet)
+library(shiny)
+library(kableExtra)
+library(dplyr)
+library(knitr)
+library(tidyverse)
+
+metadata <- "mtdb_metadata.csv"
+selected.fields <- c("identifier", "mt_hg", "site", "culture", "epoch", "bp", "longitude", "latitude", "reference_names", "reference_links")
+```
+
+# mtDNA
+
+The mitochondrial DNA (mtDNA) can be download from the [Ancient mtDNA database](https://amtdb.org/records/) of published mitochondrial sequences coming from the ancient DNA samples (aDNA). There is mtDNA datasets:  [data](#mt.data) and [metadata](#mt.meta)
+
+## mtDNA data {#mt.data}
+
+FASTA format is a text-based format for representing either nucleotide sequences or peptide sequences, in which base pairs or amino acids are represented using single-letter codes. A sequence in FASTA format begins with a single-line description, followed by lines of sequence data. FASTA formats can be read with the [phylotools package](https://github.com/helixcn/phylotools). First identifiers are:
+
+```{r data1, echo=F, fig.align='center', fig.cap="Preview of the current [NeoNet dataset](#panel.data) (work in progress) using RShiny and Leaflet in R"}
+library(phylotools)
+fasta.names <- get.fasta.name("mtdb_1511.fasta")
+cat(head(fasta.names, 10), sep = "\n")
+```
+
+The identifier is a unique key which allow to join the second dataset, [metadata](#mt.meta)
+
+# mtDNA metadata {#mt.meta}
+
+The mtDNA makes it possible to trace the maternal line. It passes from the mother to her children (of both sexes). The metadata file `r metadata` is downloaded from the [Ancient mtDNA database](https://amtdb.org/records/). The current metadata format is .csv
+
+```{r meta1, echo=F, fig.align='center', fig.cap="Preview of the current [NeoNet dataset](#panel.data) (work in progress) using RShiny and Leaflet in R"}
+df <- read.csv(metadata, encoding = "UTF-8")
+kable(df[sample(nrow(df), 3), ],"html",
+      row.names = F,
+      caption = "aDNA metadata sample") %>%
+  kable_styling(full_width = FALSE, position = "center", font_size=11)
+```
+
+It counts `r nrow(df)` samples and `r ncol(df)` columns. 
+
+
+## mtDNA metadata x absolute dating
+
+Crossing [absolute dating](https://neolithic.shinyapps.io/AbsoluteDating/) and haplogroup mitochondrial
+
+To be easier to reuse for gene-date analysis, the dataset needs to be cleaned.
+
+* interesting fields: `r selected.fields`
+
+* typo errors (like `df$longitude > 90`)
+
+* sample associated to radiocarbon dates only
+
+In order to obtain the dates' BP and SD values in distinct columns, to calibrate them, a *regex* is done on the field 'bp' (split on '±')
+
+
+```{r clean, echo=T"}
+# df <- df[ , selected.fields]
+df <- df %>% 
+  select(selected.fields) %>%
+  filter(bp != "" & !is.na(bp))  %>%
+  filter(str_detect(bp, "±"))  %>%
+  filter(!str_detect(bp, "BP|and")) %>%
+  filter(longitude >= -90 & longitude <= 90) %>%
+  filter(latitude >= -90 & latitude <= 90)
+# get bp and sd separated
+bps <- unlist(sapply(df$bp,
+                     function(x) strsplit(x, "±")),
+              use.names = FALSE)
+mat <- matrix(bps, ncol=2, byrow=TRUE)
+df$c14bp <- mat[, 1]
+df$c14sd<- mat[, 2]
+df$bp <- NULL
+```
+
+Now the new dataset has `r nrow(df)` samples and looks like:
+
+```{r step1, echo=F, fig.align='center', fig.cap="Preview of the current [NeoNet dataset](#panel.data) (work in progress) using RShiny and Leaflet in R"}
+selected.fields <- c("identifier", "mt_hg", "site", "culture", "epoch", "c14bp", "c14sd", "longitude", "latitude", "reference_names", "reference_links")
+df <- df[, selected.fields]
+kable(df[sample(nrow(df), 6), ],"html",
+      row.names = F,
+      caption = "aDNA metadata sample") %>%
+  kable_styling(full_width = FALSE, position = "center", font_size=11)
+```
+
+```{r map_ok, echo=F, fig.align='center', fig.cap="Cleaned [Ancient mtDNA database](https://amtdb.org/records/) using RShiny and Leaflet in R"}
+desc <- paste0("<b>", df$site, "</b> <span style='color:red'>", df$mt_hg, "</span> <br>",
+                 "culture: ", df$culture, " <i>", df$epoch, "</i><br>", 
+                 "c14: ", df$c14bp, " ± ", df$c14sd, " BP")
+df$lbl <- paste0(desc, '<br> ref: <a href=',shQuote(paste0(df[,'reference_links'])),"\ target=\"_blank\"",
+                                ">", df[,'reference_names'], "</a>")
+leaflet(data = df, width = "60%", height = "400px") %>%
+  # setView(lng = -111.846061, lat = 36.115847, zoom = 12) %>%
+  addTiles(group = 'OSM') %>%
+  addCircleMarkers(layerId = ~identifier, 
+                   lng = ~longitude,
+                   lat = ~latitude,
+                   weight = 1,
+                   radius = 3,
+                   popup = ~lbl,
+                   #fillColor = df_colors$color,
+                   #color = "black",
+                   opacity = 0.7,
+                   fillOpacity = 0.7)
+```
+

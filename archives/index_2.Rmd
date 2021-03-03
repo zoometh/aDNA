@@ -1,0 +1,346 @@
+---
+title: "**Gene-culture** coevolution"
+author: "Thomas Huet"
+bibliography:
+- 'refs.bib'
+output: 
+  bookdown::html_document2:
+    number_sections: false
+    keep_md: true
+  # html_document:
+    toc: true
+    toc_float: 
+      collapsed: false
+      smooth_scroll: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(leaflet)
+library(shiny)
+library(kableExtra)
+library(dplyr)
+library(knitr)
+library(tidyverse)
+library(phylotools)
+library(igraph)
+
+
+metadata <- "mtdb_metadata.csv"
+```
+
+Gene-culture coevolution is one of the main challenge of evolutionnary archaeology. Study of aDNA will permit to respond to the question: ['***Who ?***'](https://github.com/zoometh/thomashuet/blob/main/README.md#statements). 
+
+It will permit to define the genetic identity of the social groups. For example,
+and schematically, the [hg U5](https://sites.google.com/view/haplotree-info/home/mtdna-u5) is typical of last hunter-gatherers/Mesolithics and the [hg N1a](https://sites.google.com/view/haplotree-info/home/y-dna-n) is typical of early farmers.
+In Eastern and Northern Europe, despite various material exchanges, few
+admixtures between early farmers farmers and indigenous hunter-gatherers
+have been observed. Mesolithics could have backed up to West Europe, the
+westernmost part of the Eurasian continent, and admixture could be more
+frequent in the West. In the middle Rhine valley, last hunter-gatherers
+populations have probably played a role in the Michelsberg cultural
+affirmation [@Beau] and such interrogations also exist for the
+development of Megalithism along the Atlantic shore [@Ard18]. Genetic
+data acquired during INTERACT investigation will permit to precise
+elements to answer these questions. In addition to human societies, aDNA
+studies will also be useful to characterize animal and vegetal species
+(e.g. new breeds). Genetic analysis permit to evaluate populations
+(dis)similarities. The neutral hypothesis (H~0~) is that there is a
+population continuity with few random genetic drifts. Single-nucleotide
+polymorphisms (SNPs) are stable and good proxys to evaluate the
+(dis)similarities between populations. On the base of their study, H~0~
+can be rejected (H~1~ accepted) and factors like mutation, selection and
+migration can be supposed. At the time scale we investigate, only the
+migration factor could explain observed changes in the genetic of
+Europeans. There exist various methods to measure differences between
+populations and to distinguish groups of populations. Proximities among
+pairwise groups can be evaluated by the comparison of their genetic
+distance (F~ST~ matrix) [@Hervella]. The determination of groups (e.g.
+indigenous, immigrants) is mostly based on the study of the SNPs or
+discrete hg frequencies [@Bramanti09]. Similarities will be computed
+with Analysis of Molecular Variance (AMOVA), genetic mapping (e.g.
+phylogenetic trees, haplotype network, median-joining network) and
+cluster analysis (multidimensional scaling, dendrogram, etc.). All the
+data will be proceed with [ape](https://cran.r-project.org/web/packages/ape/index.html), [pegas](https://cran.r-project.org/web/packages/pegas/index.html), or any appropriate R
+packages.
+
+# Ancient mtDNA database
+
+The mitochondrial DNA (mtDNA) can be download from the [Ancient mtDNA database](https://amtdb.org/records/) of published mitochondrial sequences coming from the ancient DNA samples (aDNA). There is mtDNA datasets:  [data](#mt.data) and [metadata](#mt.meta)
+
+## mtDNA data {#mt.data}
+
+FASTA format is a text-based format for representing either nucleotide sequences or peptide sequences, in which base pairs or amino acids are represented using single-letter codes. A sequence in FASTA format begins with a single-line description, followed by lines of sequence data. FASTA formats can be read with the [phylotools](https://github.com/helixcn/phylotools) package. First identifiers are:
+
+```{r data1, echo=F, fig.align='center', fig.cap="Preview of the current [NeoNet dataset](#panel.data) (work in progress) using RShiny and Leaflet in R"}
+fasta.names <- get.fasta.name("mtdb_1511.fasta")
+cat(head(fasta.names, 10), sep = "\n")
+```
+
+The identifier is a unique key which allow to join the second dataset, [metadata](#mt.meta)
+
+## mtDNA metadata {#mt.meta}
+
+The mtDNA makes it possible to trace the maternal line. It passes from the mother to her children (of both sexes). The metadata file [`r metadata`](mtdb_metadata.csv) is downloaded from the [Ancient mtDNA database](https://amtdb.org/records/). The current metadata format is .csv
+
+```{r meta1, echo=F, fig.align='center', fig.cap="Preview of the current [NeoNet dataset](#panel.data) (work in progress) using RShiny and Leaflet in R"}
+df <- read.csv(metadata, encoding = "UTF-8")
+kable(df[sample(nrow(df), 3), ],"html",
+      row.names = F,
+      caption = "aDNA metadata sample") %>%
+  kable_styling(full_width = FALSE, position = "center", font_size=11)
+```
+
+It counts `r nrow(df)` samples and `r ncol(df)` columns. 
+
+# Cross analysis
+
+Cross analysis of mtDNA haplogroup aDNA, cultures and radiocarbon dates
+
+## mtDNA *and* culture
+
+Two fields give direct insights on the cultural membership of the skeleton. The field 'culture' counts `r length(unique(df$culture))` distinct cultures. The field 'epoch' is more generic and counts `r length(unique(df$epoch))` distinct epoch. 
+
+To illustrate gene-culture coevolution, we will focus on the Central and Western Mediterranean (ie, Italy to Spain) during the Mesolithic/Neolithic transition. We also avoid *unicums* in cultures(Freq > 2)
+
+```{r def, echo=T}
+df.MesoNeo <- df %>% 
+  # select(selected.fields) %>%
+  filter(epoch == 'Mesolithic' | epoch == 'Neolithic') %>%
+  filter(latitude < 46 & latitude > 36) %>%
+  filter(longitude > -6 & longitude < 22.5)
+MNcultures <- as.data.frame(table(df.MesoNeo$culture),
+                            stringsAsFactors = F)
+MNcultures <- MNcultures %>% 
+  filter(Freq > 1)
+unicums <- MNcultures %>% filter(Freq == 1) # get unicums
+```
+
+The new dataset counts `r nrow(df.MesoNeo)` samples and `r length(unique(df.MesoNeo$culture))` distinct cultures. :
+
+```{r meth, echo=F}
+ggplot(MNcultures, aes(x="", y=Freq, fill=Var1))+
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0) + theme_minimal() + 
+  geom_text(aes(y = Freq/3 + c(0, cumsum(Freq)[-length(Freq)]),
+                label = Freq))
+```
+
+Map the dataset with sample's haplogroup colored in <span style="color: red;">red</span> and the culture is colored in <span style='color:orange'>orange</span>
+
+```{r cldd, echo=F, fig.align='center', fig.cap="Cleaned [Ancient mtDNA database](https://amtdb.org/records/) using RShiny and Leaflet in R"}
+df.MesoNeo <- df.MesoNeo[!(df.MesoNeo$culture %in% unicums$Var1),]
+desc <- paste0("<b>", df.MesoNeo$site, "</b> <span style='color:red'>", df.MesoNeo$mt_hg, "</span> <br>",
+               "culture: <span style='color:orange'>", df.MesoNeo$culture, "</span> <i>", df.MesoNeo$epoch, "</i><br>")
+df.MesoNeo$lbl <- paste0(desc, '<br> ref: <a href=',shQuote(paste0(df.MesoNeo[,'reference_links'])),"\ target=\"_blank\"",
+                 ">", df.MesoNeo[,'reference_names'], "</a>")
+leaflet(data = df.MesoNeo, width = "60%", height = "400px") %>%
+  # setView(lng = -111.846061, lat = 36.115847, zoom = 12) %>%
+  addTiles(group = 'OSM') %>%
+  addCircleMarkers(layerId = ~identifier, 
+                   lng = ~longitude,
+                   lat = ~latitude,
+                   weight = 1,
+                   radius = 3,
+                   popup = ~lbl,
+                   #fillColor = df_colors$color,
+                   #color = "black",
+                   opacity = 0.7,
+                   fillOpacity = 0.7)
+```
+
+A simple manner to see how mtDNA hg and cultures are correlated one with another consist in creating a graph drawing (a 2-mode graph) with the [igraph](https://cran.r-project.org/web/packages/igraph/index.html) package
+
+```{r ddeodd, warning=F, echo=F, fig.width=10,fig.height=10}
+par(mar = c(0, 0, 0, 0))
+
+df.MesoNeo$culture <- toupper(df.MesoNeo$culture)
+edges <- df.MesoNeo[, c("culture", "mt_hg")]
+# grph <- graph_from_data_frame(edges, directed = TRUE, vertices = NULL)
+nds.culture <- unique(df.MesoNeo$culture)
+nds.culture.color <- rep("gold", length(nds.culture))
+nds.mt_hg<- unique(df.MesoNeo$mt_hg)
+nds.mt_hg.color <- rep("grey", length(nds.mt_hg))
+thm.ths.nds <- data.frame(name=c(nds.culture, nds.mt_hg),
+                          color=c(nds.culture.color, nds.mt_hg.color))
+g <- graph_from_data_frame(edges,
+                           directed=F,
+                           vertices= thm.ths.nds)
+plot(g, vertex.label.cex= 0.7,
+     vertex.frame.color=NA,
+     vertex.label.color = "black",
+     vertex.label.family="Helvetica",
+     vertex.size=9)
+```   
+
+
+
+### Resume
+
+Gene-culture coevolution needs to be refined. Here, as stated, data come from two distinct periods: Mesolithic and Neolithic. Maybe the cultural membership of mtDNA sample can be discussed, the time-rank could be precised, etc.
+
+## mtDNA *and* radiocarbon dates
+
+We will use the metadata .csv file to join the sample identifiers with the radiocarbon dates. These latter have a unique laboratory number [LabCode](https://zoometh.github.io/C14/neonet/#mf.labcode). This premit to associate the mtDNA sample with the radiocarbon date. To be easier to reuse for gene-date analysis, the dataset needs to be cleaned keeping interesting fields and removing samples with typo errors (like `df$longitude > 90`)
+
+```{r ddeo, echo=T}
+selected.fields <- c("identifier", "mt_hg", "site", "culture", "epoch", "bp", "c14_lab_code", "longitude", "latitude", "reference_names", "reference_links")
+n.samples <- nrow(df)
+df <- df %>% 
+  select(selected.fields) %>%
+  filter(longitude >= -90 & longitude <= 90) %>%
+  filter(latitude >= -90 & latitude <= 90)
+```
+
+The dataset has `r nrow(df)` samples (`r nrow(df)-n.samples` samples have coordinates errors). There's `r ncol(df)` columns. The dataset can be spacialized with Leaflet
+
+```{r map_notclean, echo=F, fig.align='center', fig.cap="Cleaned [Ancient mtDNA database](https://amtdb.org/records/) using RShiny and Leaflet in R"}
+desc <- paste0("<b>", df$site, "</b> <span style='color:red'>", df$mt_hg, "</span> <br>",
+               "culture: ", df$culture, " <i>", df$epoch, "</i><br>", 
+               "c14: ", df$bp, "[<span style='color:green'>", df$c14_lab_code, "</span>]")
+df$lbl <- paste0(desc, '<br> ref: <a href=',shQuote(paste0(df[,'reference_links'])),"\ target=\"_blank\"",
+                 ">", df[,'reference_names'], "</a>")
+leaflet(data = df, width = "60%", height = "400px") %>%
+  # setView(lng = -111.846061, lat = 36.115847, zoom = 12) %>%
+  addTiles(group = 'OSM') %>%
+  addCircleMarkers(layerId = ~identifier, 
+                   lng = ~longitude,
+                   lat = ~latitude,
+                   weight = 1,
+                   radius = 3,
+                   popup = ~lbl,
+                   #fillColor = df_colors$color,
+                   #color = "black",
+                   opacity = 0.7,
+                   fillOpacity = 0.7)
+```
+
+
+The selected samples are those associated to radiocarbon dates, so empty values are removed. The radicarbon field 'bp' is not strictly formatted, a text editio has to be done with regular expressions (*regex*). by splitting the BP and SD values currently in the 'bp' field (split on '±'). 
+
+
+```{r clean_c, echo=T}
+df <- df %>% 
+  filter(bp != "" & !is.na(bp))  %>%
+  filter(str_detect(bp, "±"))  %>%
+  filter(!str_detect(bp, "BP|and"))
+
+bps <- unlist(sapply(df$bp,
+                     function(x) strsplit(x, "±")),
+              use.names = FALSE)
+mat <- matrix(bps, ncol=2, byrow=TRUE)
+df$c14bp <- mat[, 1]
+df$c14sd<- mat[, 2]
+df$bp <- NULL
+```
+
+Now the new dataset has `r nrow(df)` samples and looks like:
+
+```{r step1, echo=F, fig.align='center', fig.cap="Preview of the current [NeoNet dataset](#panel.data) (work in progress) using RShiny and Leaflet in R"}
+selected.fields <- c("identifier", "mt_hg", "site", "culture", "epoch", "c14_lab_code", "c14bp", "c14sd", "longitude", "latitude", "reference_names", "reference_links")
+df <- df[, selected.fields]
+kable(df[sample(nrow(df), 6), ],"html",
+      row.names = F,
+      caption = "aDNA metadata sample") %>%
+  kable_styling(full_width = FALSE, position = "center", font_size=11)
+```
+
+The dataset can be spatialized. The mtDNA haplogroup is colored in <span style="color: red;">red</span>. The LabCode is colored in <span style="color: green;">green</span>
+
+
+```{r map_ok, echo=F, fig.align='center', fig.cap="Cleaned [Ancient mtDNA database](https://amtdb.org/records/) using RShiny and Leaflet in R"}
+desc <- paste0("<b>", df$site, "</b> <span style='color:red'>", df$mt_hg, "</span> <br>",
+               "culture: ", df$culture, " <i>", df$epoch, "</i><br>", 
+               "c14: ", df$c14bp, " ± ", df$c14sd, " BP ", 
+               "[<span style='color:green'>", df$c14_lab_code, "</span>]")
+df$lbl <- paste0(desc, '<br> ref: <a href=',shQuote(paste0(df[,'reference_links'])),"\ target=\"_blank\"",
+                 ">", df[,'reference_names'], "</a>")
+leaflet(data = df, width = "60%", height = "400px") %>%
+  # setView(lng = -111.846061, lat = 36.115847, zoom = 12) %>%
+  addTiles(group = 'OSM') %>%
+  addCircleMarkers(layerId = ~identifier, 
+                   lng = ~longitude,
+                   lat = ~latitude,
+                   weight = 1,
+                   radius = 3,
+                   popup = ~lbl,
+                   #fillColor = df_colors$color,
+                   #color = "black",
+                   opacity = 0.7,
+                   fillOpacity = 0.7)
+```
+
+With their unique LabCode, the  dates can be easily [calibrated](https://neolithic.shinyapps.io/AbsoluteDating/#Applications) and connected to existing [databases](https://neolithic.shinyapps.io/AbsoluteDating/#Databases)
+
+# Gene-culture coevolution representation
+
+The classical issue on gene-culture coevolution topic -- to challenge
+the opposite 'demic diffusion' (i.e. immigration) and 'trait-adoption'
+(i.e. acculturation) models -- is purely theoretical: at the same time
+the population grew, both demic and cultural diffusions occurred. As said, horizontal transmission (exchanges between two or more
+societies) has taken a growing importance in course of the Neolithic.
+Transmissions can be represented with a dendrogram when vertical (i.e
+diachronic, e.g. genetic transmission) or a network when horizontal (i.e
+contemporary, e.g. trade network). A phylogenetic tree will show a
+tree-like history (vertical) while a cultural tree will be more
+anastomosed (i.e. reticulated), showing more synchronous divergences
+[@Gray10]. To measure the coefficient of these horizontal
+interconnections we will employ the NeighborNet algorithm of [phangorn](https://cran.r-project.org/web/packages/phangorn/index.html).
+This algorithm is based on the neighbor-joining method, it calculates
+the statistics of D-score and its derivative Q-residual (a Q-residual=0
+is a tree, a Q-residual=1 is fully reticulated). Trees can be rooted
+(i.e. the ancestor will be identify) using appropriate algorithms
+depending on assumptions on evolution dynamics: weighted or unweighted
+pair-group arithmetic average (WPGMA or UPGMA) for example. The
+symbology of phylogenetic trees, networks, maps and other graphs will be
+managed with graphical grammar (e.g. [ggplot](https://cran.r-project.org/web/packages/ggplot2/index.html))
+
+# Gene-culture coevolution simulation
+
+Once *facts* established and patterns recognized, spatio-temporal
+*scenarios* will also be proposed. ABM permits to simulated interactions
+between local entities (agents or patches) within an environment (the
+so-called 'world'). For historical sciences, it permits to infer past
+mechanisms (simulated data) from the observation of the present
+situation (observed data). In archaeology, ABM had been appropriately
+employ, for example, to explain the LBK Neolithic diffusion[@Dubouloz].
+LBK diffusion is almost continuous and seems to correspond to the
+so-called 'ideal despotic distribution' model (IDD model): after a
+village scission and a migration, LBK families, or groups, founded a new
+settlement in the best soils ('best patches')[@Shennan07]. The village
+scission is probably triggered by a high consumption/production (C/P)
+ratio: a population growth and a correlative decreasing productivity for
+food production [@Dubouloz]. This processes are also visible in the LBK
+village organization. This latter shows two kinds of houses: small
+houses with ceramic innovations, craft activities, importance of hunting
+products, few grinding tools, without granaries, etc., and big houses
+with traditional ceramics, ox dominant, concentration of grinding tools,
+granaries, etc. The small houses are considered to be those of the new
+incomers into the village, while big houses correspond to more ancient
+inhabitants and lineages [@Coudart98][@Gomart15]. These observations
+will be further developed as part of the ANR Homes[^3]. To be
+meaningfully conducted on Neolithic contexts, ABM necessarily needs to
+be simple and grounded on robust observations: its task is to enlighten
+emerging complex structures from simple interactions and models by
+identifying threshold effects (e.g. agriculture capabilities, estimated
+population size). Our ABM will be based on aDNA data and cultural traits
+analyses. Agents (*turtles* in NetLogo) and patches (field units in the
+'world') will be social groups, villages, agrarian units, family
+lineage, etc. We will employ, and develop, existing mathematical models
+of interactions: between different agents (e.g. gravity models), or
+between agent and its environment (e.g. GLUES model [@Lemmen11]).
+Considering populations' size and demography, summed radiocarbon
+probability distributions (SRPD), settlement studies, and analyses of
+funeral domain (e.g. necropolis, average age of death) would be used as
+a proxy. Map algebra, taking into account nature of the soil, average of
+precipitation, temperature and cloudiness, will permit to infer the
+agriculture capabilities of patches. By programming simulations with
+different inputs and models, we will test scenarios of historical
+developments to find the most likely to explain observed regularities.
+For each type of simulation the definition of the region of interest,
+different levels of interactions, rules of adaptation and emergence,
+models, types of statistical outputs, etc. will be done respecting the
+Overview, Design concepts, and Details (ODD) protocol. A particular
+interest will be put on the study of the time dimension.
+
+# References
