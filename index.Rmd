@@ -2,7 +2,7 @@
 title: "**Gene-culture** coevolution (GC-coev)"
 author: "Thomas Huet"
 bibliography:
-- 'refs.bib'
+- 'refer_3.bib'
 output: 
   bookdown::html_document2:
     number_sections: false
@@ -40,6 +40,7 @@ library(Bchron)
 library(rcarbon)
 
 metadata <- "mtdb_metadata.csv"
+amtdb <- "https://amtdb.org/records/"
 
 blank_theme <- theme_minimal()+
   theme(
@@ -52,13 +53,15 @@ blank_theme <- theme_minimal()+
   )
 ```
 
-Gene-culture coevolution (GC-coev) is one of the main challenge of evolutionary archaeology. It requires the cross study of aDNA ('***Who ?***') and the different aspects of the culture (['***What ?***'](https://github.com/zoometh/thomashuet/blob/main/README.md#what)). 
+Gene-culture coevolution (GC-coev) is one of the main challenge of evolutionary archaeology. It requires the cross study of aDNA (['***Who ?***'](https://github.com/zoometh/thomashuet/blob/main/README.md#who)) and the different aspects of the culture (['***What ?***'](https://github.com/zoometh/thomashuet/blob/main/README.md#what)). 
 
-This doc is a HTML presentation host on [GitHub](https://github.com/zoometh/aDNA), which brings together R + Leaflet coding showing how to download data from the Ancient mtDNA database (AmtDB) and we conduct and overview of GC-coev issues concerning the transition between hunter-gatherers (HG) and early farmers (EF) in the Central and West Europe.
+# Presentation
+
+This doc is a HTML presentation host on [GitHub](https://github.com/zoometh/aDNA), which brings together R + Leaflet coding showing how to reuse mtDNA data and perform cross-analysis between gene, culture and radiocarbon dates. This overview focus on the the transition between hunter-gatherers (HG) and early farmers (EF) in the Central and West Europe
 
 # The AmtDB dataset
 
-The mitochondrial DNA (mtDNA) makes it possible to trace the maternal line. It passes from the mother to her children (of both sexes). Published mitochondrial sequences coming from the ancient DNA samples (aDNA) can be download from the [Ancient mtDNA database (AmtDB)](https://amtdb.org/records/). This database gathers . The whole dataset is composed by the [data](#mt.data) and the [metadata](#mt.meta)
+The mitochondrial DNA (mtDNA) makes it possible to trace the maternal line. It passes from the mother to her children (of both sexes). Published mitochondrial sequences coming from the ancient DNA samples (aDNA) can be download from the [Ancient mtDNA database (AmtDB)](amtdb). This database gathers . The whole dataset is composed by the [data](#mt.data) and the [metadata](#mt.meta)
 
 
 ## data {#mt.data}
@@ -66,21 +69,21 @@ The mitochondrial DNA (mtDNA) makes it possible to trace the maternal line. It p
 The data file [mtdb_1511.fasta](mtdb_1511.fasta) is downloaded from the AmtDB. The current metadata format is .fasta, a text-based format for representing either nucleotide sequences or peptide sequences, in which base pairs or amino acids are represented using single-letter codes. FASTA formats can be read with the [phylotools](https://github.com/helixcn/phylotools) package. A sequence in FASTA format begins with a single-line description, followed by lines of sequence data:
 
 ```{r data1, echo=T}
-fasta <- phylotools::read.fasta("mtdb_1511.fasta")
+fasta <- read.fasta("mtdb_1511.fasta")
 fasta$seq.name[1]
 substr(fasta$seq.text[1], 1, 250)
 ```
-Each of these identifiers is a unique key for a sample. The data file counts <span style='color:grey'>`r length(fasta$seq.text)`</span> different identifiers. These identifiers which allow to join the second dataset, [metadata](#mt.meta). We will use this latter for cross-analysis
+Each of these identifiers is a unique key for a sample. The data file counts <span style='color:grey'>`r length(fasta$seq.text)`</span> different identifiers. These identifiers which allow to join the second dataset, [metadata](#mt.meta) for cross-analysis
 
 ## metadata {#mt.meta}
 
-The metadata file [metadata](mtdb_metadata.csv) is downloaded from the AmtDB. The current metadata format is .csv
+The metadata file [metadata](mtdb_metadata.csv) is a .csv file recording the site name, culture, epoch, geographical coordinates, etc.: 
 
-```{r meta1, echo=F, fig.align='center', fig.cap="Preview of the current [NeoNet dataset](#panel.data) (work in progress) using RShiny and Leaflet in R"}
+```{r meta1, echo=F, fig.align='center'}
 df <- read.csv(metadata, encoding = "UTF-8")
 kable(df[sample(nrow(df), 3), ],"html",
       row.names = F,
-      caption = "aDNA metadata sample") %>%
+      caption = "Sample of mtDNA metatadata") %>%
   kable_styling(full_width = FALSE, position = "center", font_size=11)
 ```
 
@@ -93,7 +96,7 @@ Within the AmtDB database, one (1) field concerns the mtDNA hg ('mt_hg') and two
 1. 'culture' counts <span style='color:grey'>`r length(unique(df$culture))`</span> distinct values
 2. 'epoch' is more generic and counts <span style='color:grey'>`r length(unique(df$epoch))`</span> distinct values 
 
-To illustrate GC-coev, we will focus on the culture tags (i.e., 'culture' column) of the Mesolithic/Neolithic transition (i.e., 'epoch' == 'Mesolithic' or 'Neolithic'). Our region of interest is the Central and Western Mediterranean (i.e., from Greece to Spain). We will remove sample where the 'mt_hg' is empty, and to have an easily legible dataset we will also remove *unicum* (Freq == 1) in the 'culture' field
+To illustrate GC-coev, we will focus on the culture tags (i.e., 'culture' column) of the Mesolithic/Neolithic transition (i.e., 'epoch' == 'Mesolithic' or 'Neolithic'). Our region of interest is the Central and Western Mediterranean (i.e., from Greece to Spain). Samples with empty values in 'mt_hg' are removed. To have an easily visibly of the dataset we remove also the little represented cultures  (Freq == 1)
 
 ```{r def, echo=T}
 df.MesoNeo <- df %>% 
@@ -110,7 +113,7 @@ MNcultures <- as.data.frame(table(df.MesoNeo$culture),
 
 After processing, the new dataset counts <span style='color:grey'>`r nrow(df.MesoNeo)`</span> samples and <span style='color:grey'>`r length(unique(df.MesoNeo$culture))`</span> distinct cultures:
 
-```{r pie_chart, echo=F, fig.align='center'}
+```{r piechart, echo=F, fig.align='center', fig.cap="Counts of mtDNA samples for the main cultures"}
 nb.cols <- nrow(MNcultures)
 mycolors <- colorRampPalette(brewer.pal(8, "Set1"))(nb.cols)
 df.colors <- data.frame(Var1=unique(MNcultures$Var1),
@@ -133,19 +136,23 @@ ggplot(data, aes (x="", y = prop, fill = color)) +
   blank_theme
 ```
 
-The selected mtDNA sample of the dataset can be mapped. Colors of points are the same as previously. Inside their popup, the hg appears always colored in <span style="color: red;">red</span> but the culture is color is value-dependent   
+The selected mtDNA samples can be mapped . R and leaflet allow to create an interactive web map and to manage its layout of the map (colors, hyperlinks, etc.): mtDNA samples have the same color as the pie chart (Figure \@ref(fig:piechart)). Inside their popup (column 'lbl'), the hg appears always colored in <span style="color: red;">red</span>, culture color depends on the culture, the mtDNA identifier and the bibliographical reference are hyperlinks 
 
 
-```{r cldd, echo=F, fig.align='center', fig.cap="Cleaned [Ancient mtDNA database](https://amtdb.org/records/) using RShiny and Leaflet in R"}
+```{r cldd, echo=T, fig.align='center', fig.cap="Sample and cleaned dataset"}
 df.MesoNeo.a <- df.MesoNeo
 df.MesoNeo.a <- merge(df.MesoNeo.a, df.colors, by.x="culture", by.y="Var1", all.x=T)
-# df.MesoNeo.a <- df.MesoNeo.a[!(df.MesoNeo.a$culture %in% unicums$Var1),]
-desc <- paste0("<b>", df.MesoNeo.a$site, 
-               "</b> <span style='color:red'>", df.MesoNeo.a$mt_hg, "</span> <br>",
-               "culture: <span style='color:",df.MesoNeo.a$color,";'>", df.MesoNeo.a$culture, "</span> <i>",
-               # "culture: <span style='color:orange'>", df.MesoNeo.a$culture, "</span> <i>",
-               df.MesoNeo.a$epoch, "</i><br>")
-df.MesoNeo.a$lbl <- paste0(desc, 'ref: <a href=',
+df.MesoNeo.a$lbl <- paste0("<b>", df.MesoNeo.a$site, "</b> <br>",
+                           "hg: <b> <span style='color:red'>",
+                           df.MesoNeo.a$mt_hg, "</span> </b>, ",
+                           'identifier: <a href=', 
+                           shQuote(paste0(amtdb,df.MesoNeo.a[,'identifier'])),
+                           "\ target=\"_blank\"", ">",
+                           df.MesoNeo.a[,'identifier'], "</a> <br>",
+                           "culture: <span style='color:",df.MesoNeo.a$color,";'>",
+                           df.MesoNeo.a$culture, "</span> <i>",
+                           df.MesoNeo.a$epoch, "</i><br>",
+                           'ref: <a href=',
                            shQuote(paste0(df.MesoNeo.a[,'reference_links'])),
                            "\ target=\"_blank\"",
                            ">", df.MesoNeo.a[,'reference_names'], "</a>")
@@ -169,15 +176,11 @@ leaflet(data = df.MesoNeo.a, width = "90%", height = "500px") %>%
 
 A simple manner to model GC-coev is to create a co-occurences' graph of hg and cultures ('mt_hg' and 'culture' fields). The create graph will be a bipartite one (i.e, 2-mode graph, two classes of vertices). It could be created with the  [igraph](https://cran.r-project.org/web/packages/igraph/index.html) package. Graph drawing is a well-known heuristic, the default layout is a force-directed algorithm (e.g. Fruchterman-Reingold layout) allowing to bring  closer or move away vertices depending on the edges they share. It allows to manipulate easily the graphs. Here, graph vertices are either cultures or hg. There is a link between a culture and a hg  when an entity of the culture refers to a hg. 
 
-```{r ddeodd, warning=F, echo=F, fig.width=10,fig.height=10}
+```{r graph, warning=F, echo=F, fig.width=9, fig.height=9, fig.cap="Bipartite network of cultures and haplogroups (hg)"}
 par(mar = c(0, 0, 0, 0))
-# df.MesoNeo$culture <- toupper(df.MesoNeo$culture)
 edges <- df.MesoNeo.a[, c("culture", "mt_hg")]
-# grph <- graph_from_data_frame(edges, directed = TRUE, vertices = NULL)
 nds.culture <- as.character(data$Var1)
 nds.culture.color <- as.character(data$color)
-# nds.culture <- unique(df.MesoNeo$culture)
-# nds.culture.color <- rep("gold", length(nds.culture))
 nds.mt_hg<- unique(df.MesoNeo.a$mt_hg)
 nds.mt_hg.color <- rep("grey", length(nds.mt_hg))
 thm.ths.nds <- data.frame(name=c(nds.culture, nds.mt_hg),
@@ -208,7 +211,7 @@ The dataset variability can be reduced with agglomeration techniques like the th
 
 To to detect communities of each vertex, one can uses the 'fast greedy' algorithm  ([fastgreedy.community](https://www.rdocumentation.org/packages/igraph/versions/0.4.1/topics/fastgreedy.community) from the igraph package. This algorithm is a hierarchical ranking algorithm where initially each vertex belongs to a distinct community, and the communities are merged iteratively, so that each merge is locally optimal. The algorithm stops when it is no longer possible to increase the modularity, it will be thus gives a grouping as well as a dendrogram. This algorithm is close to the agglomeration of Ward used in hierarchical clustering (HC)
 
-```{r frr, warning=F, echo=F, fig.width=10 ,fig.height=10}
+```{r graphcomm, warning=F, echo=F, fig.width=9 ,fig.height=9, fig.cap="Community detetction on the bipartite network of cultures and haplogroups (hg)"}
 # g <- simplify(g)
 par(mar = c(0, 0, 0, 0))
 g_community <- fastgreedy.community(g)
@@ -226,34 +229,26 @@ A first reading of the clusters show a clear separation (i.e. edge distance) bet
 2. Spain Early Neolithic (Iberia_EN)
 3. Spain and France Middle/Late Neolithic (NE_Iberia_MLN and France_MLN) 
 
-GC-coev needs to be refined. Maybe the cultural membership of mtDNA sample can be discussed upstream specifying the cultures they belong to, or downstream, choosing a different [community detection algorithm](#com.det), etc.
+Surely, this GC-coev attempt needs to be refined. The cultural membership of mtDNA sample can be discussed upstream specifying the cultures they belong to, or downstream, choosing a different [community detection algorithm](#com.det), etc.
 
 # mtDNA *and* radiocarbon dates
 
-With their unique LabCode, the  dates associated with mtDNA samples can be easily be connected to existing [databases](https://neolithic.shinyapps.io/AbsoluteDating/#Databases). We will use the metadata .csv file [`r metadata`](mtdb_metadata.csv) to join the sample identifiers with the radiocarbon dates. These latter have a unique laboratory number ([LabCode](https://zoometh.github.io/C14/neonet/#mf.labcode)). This permit to associate the mtDNA sample with the radiocarbon date. 
+With their unique LabCode, the  dates associated with mtDNA samples can be easily be connected to existing [databases](https://neolithic.shinyapps.io/AbsoluteDating/#Databases). We will use the metadata .csv file [`r metadata`](mtdb_metadata.csv) to join the sample identifiers with the radiocarbon dates. These latter have a unique laboratory number ([LabCode](https://zoometh.github.io/C14/neonet/#mf.labcode)). This permit to associate the mtDNA sample with the radiocarbon date.
 
-The dataset needs to be cleaned keeping interesting fields and removing samples with typo errors (like longitude < - 90). For this training, the selected samples are those associated to radiocarbon dates: empty radiocarbon values and empty LabCode are removed. The radiocarbon field 'bp' is not strictly formatted, a text edition has to be done with regular expressions (*regex*) by splitting the values from 'bp' field (split on '±') to copy them in two: columns BP and SD. Finally, the analysis will still focus on Early Neolithic in West Europe (longitude < 7)
+The dataset needs to be cleaned keeping interesting fields and removing samples with typo errors (like longitude < - 90). For this training, the selected samples are those associated to radiocarbon dates: empty radiocarbon values and empty LabCode are removed. The radiocarbon field 'bp' is not strictly formatted, a text edition has to be done with regular expressions (*regex*) by splitting the values from 'bp' field (split on '±') to copy them in two: columns BP and SD. Finally, the analysis will still focus on Neolithic in Spain
 
 ```{r ddeo, echo=T, message=F}
-# selected.fields <- c("identifier", "mt_hg", "site", "culture", "epoch", "bp", "c14_lab_code", "year_from", "year_to", "longitude", "latitude", "reference_names", "reference_links")
 selected.fields <- c("identifier", "site", "country", "culture", "epoch", "mt_hg", "c14_lab_code", "bp", "longitude", "latitude", "reference_names", "reference_links")
 df <- read.csv(metadata, encoding = "UTF-8")
 df <- df[, selected.fields]
 df <- df %>% 
-  # select(selected.fields) %>%
-  filter(country == "Spain") %>%
-  # filter(latitude > 35) %>%
-  # filter(longitude > -6 & longitude < 5) %>%
-  # filter(longitude >= -90 & longitude < 9) %>%
-  # filter(longitude >= -90 & longitude <= 90) %>%
-  # filter(latitude >= -90 & latitude <= 90) %>%
   filter(mt_hg != "" & !is.na(mt_hg)) %>%
-  filter(epoch == 'Neolithic' | epoch == 'Mesolithic') %>%
   filter(bp != "" & !is.na(bp))  %>%
   filter(c14_lab_code != "" & !is.na(c14_lab_code))  %>%
   filter(str_detect(bp, "±"))  %>%
-  filter(!str_detect(bp, "BP|and")) # %>%
-# filter(year_from >= -6500 & year_from <= -4500)
+  filter(!str_detect(bp, "BP|and")) %>%
+  filter(country == "Spain") %>%
+  filter(epoch == 'Neolithic')
 bps <- unlist(sapply(df$bp,
                      function(x) strsplit(x, "±")),
               use.names = FALSE)
@@ -274,7 +269,7 @@ kable(df[sample(nrow(df), 6), ],"html",
 
 The dataset can be spatialized
 
-```{r map_ok, echo=F, fig.align='center', fig.cap="Cleaned [Ancient mtDNA database](https://amtdb.org/records/) using RShiny and Leaflet in R"}
+```{r mapok, echo=F, fig.align='center', fig.cap="mtDNA samples for the Neolithic of Spain"}
 MNcultures <- as.data.frame(table(df$culture),
                             stringsAsFactors = F)
 nb.cols <- nrow(MNcultures)
@@ -282,15 +277,23 @@ mycolors <- colorRampPalette(brewer.pal(8, "Set1"))(nb.cols)
 df.colors <- data.frame(Var1=unique(MNcultures$Var1),
                         color=mycolors)
 df.MesoNeo.b <- merge(df, df.colors, by.x="culture", by.y="Var1", all.x=T)
-desc <- paste0("<b>", df.MesoNeo.b$site, "</b> <span style='color:red'>",
-               df.MesoNeo.b$mt_hg, "</span> <br>",
-               "culture: <span style='color:",df.MesoNeo.b$color,";'>", 
-               df.MesoNeo.b$culture, "</span> <i>", df.MesoNeo.b$epoch, "</i><br>", 
-               "c14: ", df.MesoNeo.b$c14bp, " ± ", df.MesoNeo.b$c14sd, " BP ", 
-               "[", df.MesoNeo.b$c14_lab_code, "]")
-df.MesoNeo.b$lbl <- paste0(desc, '<br> ref: <a href=', 
-                           shQuote(paste0(df.MesoNeo.b[,'reference_links'])),"\ target=\"_blank\"",
+df.MesoNeo.b$lbl <- paste0("<b>", df.MesoNeo.b$site, "</b> <br>",
+                           "hg: <b> <span style='color:red'>",
+                           df.MesoNeo.b$mt_hg, "</span> </b>, ",
+                           'identifier: <a href=', 
+                           shQuote(paste0(amtdb,df.MesoNeo.b[,'identifier'])),
+                           "\ target=\"_blank\"", ">",
+                           df.MesoNeo.b[,'identifier'], "</a> <br>",
+                           "culture: <span style='color:",df.MesoNeo.b$color,";'>",
+                           df.MesoNeo.b$culture, "</span> <i>",
+                           df.MesoNeo.b$epoch, "</i><br>",
+                           "c14: ", df.MesoNeo.b$c14bp, " ± ", df.MesoNeo.b$c14sd, " BP ", 
+                           "[", df.MesoNeo.b$c14_lab_code, "]<br>",
+                           'ref: <a href=',
+                           shQuote(paste0(df.MesoNeo.b[,'reference_links'])),
+                           "\ target=\"_blank\"",
                            ">", df.MesoNeo.b[,'reference_names'], "</a>")
+
 leaflet(data = df.MesoNeo.b, width = "60%", height = "400px") %>%
   # setView(lng = -111.846061, lat = 36.115847, zoom = 12) %>%
   addTiles(group = 'OSM') %>%
@@ -310,40 +313,30 @@ leaflet(data = df.MesoNeo.b, width = "60%", height = "400px") %>%
             opacity = 1)
 ```
 
-R offers packages to calibrate dates like [Bchron](https://cran.r-project.org/web/packages/Bchron/index.html) or [rcarbon](https://cran.r-project.org/web/packages/rcarbon/index.html)
+R offers packages to calibrate dates like [Bchron](https://cran.r-project.org/web/packages/Bchron/index.html) or [rcarbon](https://cran.r-project.org/web/packages/rcarbon/index.html). Using this latter, we plot the dates and add the identifiers of mtDNA samples for each summed probability distributions
 
-```{r calib.all, echo=T, fig.align='center', fig.width=12 ,fig.height=7, fig.cap="Calibration of multiple radiocarbon date with [rcarbon](https://cran.r-project.org/web/packages/rcarbon/index.html)"}
+```{r calibsel, echo=T, fig.align='center', fig.width=14 ,fig.height=10, fig.cap="Calibration of radiocarbon dates associated with mtDNA data for the Neolithic of Spain"}
+idfs <- paste0(df.MesoNeo.b$c14_lab_code,"\n",df.MesoNeo.b$identifier)
 c14dates <- calibrate(x=df.MesoNeo.b$c14bp,
                       errors=df.MesoNeo.b$c14sd,
                       calCurves='intcal20',
-                      ids=df.MesoNeo.b$c14_lab_code)
+                      ids=idfs,
+                      verbose = FALSE)
 multiplot(c14dates,decreasing=TRUE,rescale=TRUE,HPD=TRUE)
 ```
 
-### Comtemporaneous mtDNA samples
+### Comtemporaneity
 
-If one wants to study contemporaneous mtDNA samples, a statistical test has be performed. At first, we can discard the date with the LabCode MAMS-14585 which it clearly isolated, and replot the rest of the dates. We add the identifiers of mtDNA samples on each summed probability distributions
+If one wants to study contemporaneous mtDNA samples, a statistical test has be performed, like a Mann-Whitney (function [wilcox.test](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test)) on the ageGrid (results of the function [BchronCalibrate](https://rdrr.io/cran/Bchron/man/BchronCalibrate.html)) for each radiocarbon date pairwise. When for a pairwise the p-value is superior to 0.05 (95%), the two dates are considered contemporaneous 
 
-```{r calib.sel, echo=T, fig.align='center', fig.width=12 ,fig.height=7, fig.cap="Calibration of multiple radiocarbon date with [rcarbon](https://cran.r-project.org/web/packages/rcarbon/index.html)"}
-df.MesoNeo.c <- df.MesoNeo.b[df.MesoNeo.b$c14_lab_code != 'MAMS-14585', ]
-idfs <- paste0(df.MesoNeo.c$c14_lab_code,"\n",df.MesoNeo.c$identifier)
-c14dates <- calibrate(x=df.MesoNeo.c$c14bp,
-                      errors=df.MesoNeo.c$c14sd,
-                      calCurves='intcal20',
-                      ids=idfs)
-multiplot(c14dates,decreasing=TRUE,rescale=TRUE,HPD=TRUE)
-```
-
-Then we will perform a Mann-Whitney test (function [wilcox.test](https://www.rdocumentation.org/packages/stats/versions/3.6.2/topics/wilcox.test)) on the ageGrid (results of the function [BchronCalibrate](https://rdrr.io/cran/Bchron/man/BchronCalibrate.html)) for each radiocarbon date pairwise. When for a pairwise the p-value is superior to 0.05 (95%), the two dates are considered contemporaneous 
-
-```{r wilcox, echo=T, fig.height=7, fig.width=7, fig.align='center', fig.cap="Mann-Whitney test results on grid ages extents of all dates pairwise"}
+```{r wilcox, echo=T, fig.height=5, fig.width=5, fig.align='center', fig.cap="Mann-Whitney test results on grid ages extents of all dates pairwise"}
 l <- list()
-for(i in 1:nrow(df.MesoNeo.c)){
-  ids <- df.MesoNeo.c[i, "identifier"]
-  a.date <- BchronCalibrate(ages=df.MesoNeo.c[i, "c14bp"],
-                            ageSds=df.MesoNeo.c[i, "c14sd"],
+for(i in 1:nrow(df.MesoNeo.b)){
+  ids <- df.MesoNeo.b[i, "identifier"]
+  a.date <- BchronCalibrate(ages=df.MesoNeo.b[i, "c14bp"],
+                            ageSds=df.MesoNeo.b[i, "c14sd"],
                             calCurves='intcal20',
-                            ids=df.MesoNeo.c[i, "identifier"])
+                            ids=df.MesoNeo.b[i, "identifier"])
   lst <- list(eval(parse(text=paste0("a.date$",ids,"$ageGrid"))))
   names(lst) <- ids
   l[length(l)+1] <- lst
@@ -351,7 +344,7 @@ for(i in 1:nrow(df.MesoNeo.c)){
 n.obs <- sapply(l, length)
 seq.max <- seq_len(max(n.obs))
 mat <- t(sapply(l, "[", i = seq.max))
-rownames(mat) <- df.MesoNeo.c[, "identifier"]
+rownames(mat) <- df.MesoNeo.b[, "identifier"]
 mat.t <- t(mat)
 n.col <- 1:length(rownames(mat))
 lcompar <- t(combn(n.col, 2))
@@ -378,21 +371,94 @@ ggplot(data = df.test, aes(x=Var1, y=Var2, fill=value)) +
   theme_minimal()+
   theme_bw()+
   theme(axis.title = element_blank())+
-  theme(axis.text=element_text(size=8))+
+  theme(axis.text=element_text(size=7))+
   theme(axis.ticks = element_blank())+
   theme(axis.ticks.length=unit(.1, "cm"))+
   theme(legend.position = "none")
 ```
 
-Only two mtDNA/radiocarbon dates have homogenized grid ages extents and can be considerated has contemporaneous, I0413 and I0410
+Only two mtDNA/radiocarbon dates have homogenized grid ages extents and can be considerated has contemporaneous, I0413 and I0410 from the Els Trocs cave (Huesca, Spain)
 
 ```{r c14.contemp, echo=F, fig.align='center'}
 selected.fields <- c("site","country","culture","identifier", "mt_hg", "c14_lab_code", "c14bp", "c14sd", "reference_names", "reference_links")
-contemp.df <- df.MesoNeo.c[df.MesoNeo.c$identifier %in% c('I0413', 'I0410'), selected.fields]
+contemp.df <- df.MesoNeo.b[df.MesoNeo.b$identifier %in% c('I0413', 'I0410'),
+                           selected.fields]
 kable(contemp.df,"html",
       row.names = F,
       caption = "Contemporaneus mtDNA samples") %>%
   kable_styling(full_width = FALSE, position = "center", font_size=11)
 ```
 
+
+### Spread of Neolithic
+
+The time period covered by the Late Mesolithic-Early Neolithic transition to the Late Neolithic represents three major demic diffusions: 
+
+1. the arrival of Anatolian early farmers during the Early Neolithic [@Bentley]
+2. the arrival of North-Pontic populations into the Corded-Ware complex (CWC) area during the Late Neolithic [@Brandt13]
+3. the spread of the Bell-Beaker complex (BBC) at the very end of Late Neolithic [@Olalde]
+
+Between these major population diffusions, smaller demic changes occurred. Final Mesolithic societies (ca. 7000-6000 BC) are considered
+to form the background of the early farmers arrivals. They are collectors-gatherers with a low net reproduction rate [@Diamond],
+generally a semi-sedentary residence (i.e. foragers), living in small groups with few storage capacities [@Binford] and long-distance
+exchanges are sparse [@Karamitrou]. Direct contacts between these last Mesolithics and first farmers, or close settlements, are very few. In Eastern and Northern Europe, despite various material exchanges, few admixtures between early farmers farmers and indigenous hunter-gatherers have been observed: the [hg U5](https://sites.google.com/view/haplotree-info/home/mtdna-u5) is typical of last hunter-gatherers/Mesolithics and the [hg N1a](https://sites.google.com/view/haplotree-info/home/y-dna-n) is typical of early farmers. Mesolithics could have backed up to West Europe, the westernmost part of the Eurasian continent, and admixture could be more frequent in the West. In the middle Rhine valley, last hunter-gatherers populations have probably played a role in the Michelsberg cultural
+affirmation [@Beau] and such interrogations also exist for the development of Megalithism along the Atlantic shore [@Ard18].
+
+Indeed, during this period and from Greece to Spain, we observed an absence of occupations (the so-called \"hiatus\" or \"gap\"). This
+\"hiatus\" is maybe due to a major mobility at the end of the 7^th^ millenium BC linked to a major climatic event (8.2 Ky BP event) with
+drying and cooling in Europe [@Guilaine]. The earliest Neolithic culture in Europe concerns the South-eastern part of the continent occupied by
+the PPC, ca 6500-6000 BC. After PPC diffusion in Greece, Thrace and the Balkan peninsula, a first stop in the progression is observed on its
+western and northern frontiers, respectively in western Greece with the PPC/ICC transition, and in the western Hungarian with the PPC/LBK
+transition.
+
+1. The former frontier, near the archaeological site of Sidari (Corfu, Greece), seems to depend on a renewal of the Neolithic culture
+[@Guilaine1]
+2. The second frontier (PPC/LBK transition) is linked to the Central European-Balkanic agro-ecological barrier and may result in the
+adaption of the agro-pastoral way of living to a new environment. For example, the development of farming and breeding in northern parts of
+Europe needs the development of a day length non-response gene (PPD-H1) for the barley [@Jones]. 
+
+After that, the two main currents for the beginning of farming in Central and Western Europe are the ICC (ca 5800-4900 BC) in the Mediterranean area, and the LBK (ca 5600-4900 BC) in the continent area. These currents where relatively fast even if other delays can also be observed in the diffusion of farming [@Guilaine1].
+
+ICC current of farming is the fastest but shows spatial discontinuities
+(leapfrog movements) [@Binder17]. The first phase of ICC, Impressa
+pioneer front, is short (ca 5800-5600 BC). The material culture of
+Impressa (e.g. lithics, subsistence system) shows significant
+differences with the Mesolithic indigenous. But contacts between
+Mesolithics and Early Neolithics exist: Impressa layers of Arene Candide
+(Finale Ligure, Liguria) show flints coming from a region controlled by
+late Mesolithic groups (Monti Lessini in Appenins)[@Binder01]. The second
+phase of ICC, Cardial (ca 5600-5000 BC), shows more connections and
+admixture with the Mesolithic way of living with, for example, a part of
+the hunting in the subsistence system and adoption of lithic tools. This
+latter phase could be interpreted as an acculturation phase between
+Neolithics and Mesolithics.
+
+LBK current of neolithisation shows a homogeneous culture (settlement,
+ceramic and lithic productions, subsistence system) recognized for a
+long time by archaeologists thanks to a favorable taphonomy of the
+settlements. As said, its diffusion seems to correspond to the IDD model
+where the demic factor is the most important one. Few genetic admixture
+has been recognized between Recent LBK farmers and latest
+hunter-gatherers even in Western Europe [@Rivollat2016].
+
+In Western Europe, first evidence of contacts between Recent LBK and
+Late Cardial (ca. 5200-4700 BC) takes place on both sides of an almost
+East-West middle-ground, extended from the middle part of the Rhone
+valley to the north of the Aquitaine basin. The Middle Neolithic
+(4500-3500 BC), except for the margins of Europe, is the achievement
+period of the farming diffusion process. This is a period of relative
+homogeneity and long-distance trades (green-stones, obsidian, bedoulian
+flint, etc.). It is not clear if this networks of distance trades were
+also the place of significant demic diffusion or if they were only
+traits exchanges. Megalithism starts as a response to a demographic
+stress [@Hamon18]. The mining phenomena also starts (e.g. in Chassean
+and Michelsberg contexts). Mining activities were probably the most
+complex activities of the period, they requires a complex organization
+all along the CO. At the westernmost part of the continent, the English
+Channel between the agro-pastoral continent and the British Islands, is
+crosses around 4000 BC by early farmers [@Collard].
+
+
 # References
+> [download in bibtex format](https://github.com/zoometh/aDNA/blob/main/refer_3.bib)
+
