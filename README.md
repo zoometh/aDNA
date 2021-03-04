@@ -26,7 +26,7 @@ modern societies.
 
 To describe gene-culture coevolution, two
 global dimensions of social groups can be distinguished: its genetic
-identity and its cultural identity
+identity (['***Who ?***'](https://github.com/zoometh/thomashuet/blob/main/README.md#who)) and its cultural identity (['***What ?***'](https://github.com/zoometh/thomashuet/blob/main/README.md#what))
 
 ## Theory
 
@@ -43,13 +43,13 @@ genetic and cultural traits is higher than anywhere outside this area;
 genetic and cultural distances between social groups will be all the
 more important as these groups are separated by time and space; etc. The
 map of present European nations is also the map of their genomic
-proximities [@Novembre]: there are generally gradual differences (i.e.
+proximities [[1]](#1): there are generally gradual differences (i.e.
 linear gradient) between neighboring countries in terms of: genetics,
 languages, kinship systems, etc. This 'continuity principle' permits to
 ground gene-culture coevolution studies on parsimonious models:
 population continuity, spatial friction, cultural consensus theories,
 seriations, etc. Exceptions to this 'continuity principle' are very few.
-Maybe the Basque population should be the best example [@Gunther].
+Maybe the Basque population should be the best example [[2]](#2).
 Beside the importance of vertical transmission, some horizontal
 transmissions could have been major triggers of social changes. In this
 way, diffusion and adoption of innovations, with its new animal breeds,
@@ -57,7 +57,7 @@ vegetal landraces, weaving or ploughing techniques, prestigious goods,
 etc., are only the most visible. All along the Neolithic, cultural
 diffusion and trait-adoptions became increasingly significant, leading
 to Bronze Age highly hierarchised societies and globalized economy
-[@Kristiansen2014].
+[[2]](#2).
 
 ## Case studie: a colonisation
 
@@ -77,3 +77,13 @@ these three phases:
 3.  development and identity affirmation: a new social group appears;
     styles autonomy; the potential of the new territory is really
     exploited; long-distance exchanges restart;
+    
+## References
+<a id="1">[1]</a>
+Novembre, J., Johnson, T., Bryc, K., Kutalik, Z., Boyko, A. R., Auton, A., ... & Bustamante, C. D. (2008). Genes mirror geography within Europe. Nature, 456(7218), 98-101.
+
+<a id="2">[2]</a>
+Günther, T., Valdiosera, C., Malmström, H., Ureña, I., Rodriguez-Varela, R., Sverrisdóttir, Ó. O., ... & Jakobsson, M. (2015). Ancient genomes link early farmers from Atapuerca in Spain to modern-day Basques. Proceedings of the National Academy of Sciences, 112(38), 11917-11922.
+
+<a id="3">[3]</a>
+Kristiansen, K., Allentoft, M. E., Frei, K. M., Iversen, R., Johannsen, N. N., Kroonen, G., ... & Willerslev, E. (2017). Re-theorising mobility and the formation of culture and language among the Corded Ware Culture in Europe. antiquity, 91(356), 334-347.
