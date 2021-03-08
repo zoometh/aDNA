@@ -35,28 +35,22 @@ genetic identities. In traditional societies, the language barrier and
 the cost of transport are the main factors to explain why genetic and
 cultural transmissions are mostly vertical (between generations, on the
 spot). Over time, autocorrelations appear between genetics, culture and
-geography, for example: a new generation inherits its parents' language
-(mother tongue) as it inherits its genes; two populations are all the
-more genetically similar they are geographically close; the geographical
-extension of a social group is the area where the association of its
-genetic and cultural traits is higher than anywhere outside this area;
-genetic and cultural distances between social groups will be all the
-more important as these groups are separated by time and space; etc. The
-map of present European nations is also the map of their genomic
-proximities [[1]](#1): there are generally gradual differences (i.e.
-linear gradient) between neighboring countries in terms of: genetics,
-languages, kinship systems, etc. This 'continuity principle' permits to
-ground gene-culture coevolution studies on parsimonious models:
-population continuity, spatial friction, cultural consensus theories,
-seriations, etc. Exceptions to this 'continuity principle' are very few.
-Maybe the Basque population should be the best example [[2]](#2).
-Beside the importance of vertical transmission, some horizontal
-transmissions could have been major triggers of social changes. In this
-way, diffusion and adoption of innovations, with its new animal breeds,
-vegetal landraces, weaving or ploughing techniques, prestigious goods,
-etc., are only the most visible. All along the Neolithic, cultural
-diffusion and trait-adoptions became increasingly significant, leading
-to Bronze Age highly hierarchised societies and globalized economy
+geography, for example: 
+
+* a new generation inherits its parents' language (mother tongue) as it inherits its genes; two populations are all the
+more genetically similar they are geographically close
+* the geographical extension of a social group is the area where the association of its genetic and cultural traits is higher than anywhere outside this area
+* genetic and cultural distances between social groups will be all the more important as these groups are separated by time and space
+* etc. 
+
+The map of present European nations is also the map of their genomic proximities [[1]](#1): there are generally gradual differences (i.e.
+linear gradient) between neighboring countries in terms of: genetics, languages, kinship systems, etc. This 'continuity principle' permits to
+ground gene-culture coevolution studies on parsimonious models: tendencies (i.e. mean, median, standard deviations) of cultural and genetic traits, [community detetction](https://zoometh.github.io/aDNA/#Community_detection)
+population continuity, spatial friction, cultural consensus theories, seriations, etc. Exceptions to this 'continuity principle' are very few.
+Maybe the Basque population should be the best example [[2]](#2). Beside the importance of vertical transmission, some horizontal
+transmissions could have been major triggers of social changes. In this way, diffusion and adoption of innovations, with its new animal breeds,
+vegetal landraces, weaving or ploughing techniques, prestigious goods, etc., are only the most visible. All along the Neolithic, cultural
+diffusion and trait-adoptions became increasingly significant, leading to Bronze Age highly hierarchised societies and globalized economy
 [[2]](#2).
 
 ## Case studie: a colonisation
