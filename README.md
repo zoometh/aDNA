@@ -51,7 +51,37 @@ Maybe the Basque population should be the best example [[2]](#2). Beside the imp
 transmissions could have been major triggers of social changes. In this way, diffusion and adoption of innovations, with its new animal breeds,
 vegetal landraces, weaving or ploughing techniques, prestigious goods, etc., are only the most visible. All along the Neolithic, cultural
 diffusion and trait-adoptions became increasingly significant, leading to Bronze Age highly hierarchised societies and globalized economy
-[[2]](#2).
+[[2]](#2). 
+
+For example, last Mesolithic sites are preferentially located
+in the mountain -- maybe because of the Neolithic pressure created by
+the arrival of first farmers -- while early farming sites occupied
+fertile lands: soils of the Balkans flood plains during Painted Pottery
+complex (PPC) diffusion, loessic soils of Central Europe and morainic
+soils of the Northern Alps during LBK diffusion (id. in the Southern
+Alps during Cardial diffusion). Spatial statistics have various indexes
+or models able to describe and explain spatial distributions. For
+example, we will calculate cost-weighted time of walk buffers from site
+locations (site catchment analysis) to study both site environmental
+context (site supply, repository of raw materials, land cover and arable
+lands, local climate, etc.) and inter-site connections. For traditional
+societies, a terrestrial 50/60 km radius, corresponding roughly to a
+day's walk, would be a theoretically good threshold below which
+principal genetic and cultural traits (marriage, language, economic
+exchanges, etc.) are optimal. Map algebra between land cover, slopes,
+climatic model, etc., will be used to evaluate the attractiveness of
+soils. Spatial statistics (e.g. semi-variograms), indexes (e.g.,
+autocorrelation Moran's I, location quotient) or pattern distribution
+(e.g. Ripley's K function, Kernel density) will permit to characterize
+social groups' spatial distributions [[10]](#10). Geographic models (e.g.
+core-periphery, down-the-line, directional trade) will permit to match
+past observations with present ones (ethnographic, economic). To reduce
+the variability of the dataset, sites will be clustered according to
+their own specificities (e.g. category, size) and their inter-relations
+(e.g. geographical or network distances, genetic and cultural
+differences of their inhabitants). Beside geographical analysis, network
+analysis will be performed when qualitative \"connections\" between
+\"nodes\" (these terms are contextually-defined) will be observed.
 
 ## Case studie: a colonisation
 
