@@ -24,6 +24,9 @@ statistics and spatial analysis. This situation permits to go further in
 the study of forces (genetic, cultural, environmental) that shape our
 modern societies. 
 
+On the base of single-nucleotide polymorphisms (SNPs) study, the neutral hypothesis (H<sub>0</sub>, i.e. a population continuity with few random genetic drifts) can be rejected (H<sub>1</sub> accepted) and factors like mutation, selection and migration can be supposed. At the time scale we investigate (Recent Prehistory), only the migration factor could explain observed significant changes in the genetic of populations. Differences between populations can be detected by different means but the determination of groups (e.g. indigenous, immigrants) is mostly based on the study of the SNPs or discrete haplogroup (hg) frequencies [[11]](#11).
+Each individual belongs to a hg. Individual sharing a common hg have also a common ancestor. Genetic traits are considered in terms of presence/absence, relative quantities and correlations of hg. A hg can be shared (in different proportions), or not, by different groups (see [here](https://github.com/zoometh/aDNA#adna)).  The R packages [ape](https://cran.r-project.org/web/packages/ape/index.html) and [pegas](https://cran.r-project.org/web/packages/pegas/index.html), among others, permit to perform analysis of Molecular Variance (AMOVA), genetic mapping (e.g. phylogenetic trees, haplotype network, median-joining network) and cluster analysis (multidimensional scaling, dendrogram, etc.)
+
 To describe gene-culture coevolution, two
 global dimensions of social groups can be distinguished: its genetic
 identity (['***Who ?***'](https://github.com/zoometh/thomashuet/blob/main/README.md#who)) and its cultural identity (['***What ?***'](https://github.com/zoometh/thomashuet/blob/main/README.md#what))
@@ -51,7 +54,37 @@ Maybe the Basque population should be the best example [[2]](#2). Beside the imp
 transmissions could have been major triggers of social changes. In this way, diffusion and adoption of innovations, with its new animal breeds,
 vegetal landraces, weaving or ploughing techniques, prestigious goods, etc., are only the most visible. All along the Neolithic, cultural
 diffusion and trait-adoptions became increasingly significant, leading to Bronze Age highly hierarchised societies and globalized economy
-[[2]](#2).
+[[2]](#2). 
+
+For example, last Mesolithic sites are preferentially located
+in the mountain -- maybe because of the Neolithic pressure created by
+the arrival of first farmers -- while early farming sites occupied
+fertile lands: soils of the Balkans flood plains during Painted Pottery
+complex (PPC) diffusion, loessic soils of Central Europe and morainic
+soils of the Northern Alps during LBK diffusion (id. in the Southern
+Alps during Cardial diffusion). Spatial statistics have various indexes
+or models able to describe and explain spatial distributions. For
+example, we will calculate cost-weighted time of walk buffers from site
+locations (site catchment analysis) to study both site environmental
+context (site supply, repository of raw materials, land cover and arable
+lands, local climate, etc.) and inter-site connections. For traditional
+societies, a terrestrial 50/60 km radius, corresponding roughly to a
+day's walk, would be a theoretically good threshold below which
+principal genetic and cultural traits (marriage, language, economic
+exchanges, etc.) are optimal. Map algebra between land cover, slopes,
+climatic model, etc., will be used to evaluate the attractiveness of
+soils. Spatial statistics (e.g. semi-variograms), indexes (e.g.,
+autocorrelation Moran's I, location quotient) or pattern distribution
+(e.g. Ripley's K function, Kernel density) will permit to characterize
+social groups' spatial distributions [[10]](#10). Geographic models (e.g.
+core-periphery, down-the-line, directional trade) will permit to match
+past observations with present ones (ethnographic, economic). To reduce
+the variability of the dataset, sites will be clustered according to
+their own specificities (e.g. category, size) and their inter-relations
+(e.g. geographical or network distances, genetic and cultural
+differences of their inhabitants). Beside geographical analysis, network
+analysis will be performed when qualitative \"connections\" between
+\"nodes\" (these terms are contextually-defined) will be observed.
 
 ## Case studie: a colonisation
 
